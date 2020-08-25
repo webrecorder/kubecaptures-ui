@@ -1,0 +1,23 @@
+@charset "utf-8";
+
+@import "node_modules/bulma/bulma";
+
+:host {
+  font-size: $body-size;
+  -moz-osx-font-smoothing: grayscale;
+  -webkit-font-smoothing: antialiased;
+  min-width: $body-min-width;
+  overflow-x: $body-overflow-x;
+  overflow-y: $body-overflow-y;
+  text-rendering: $body-rendering;
+  text-size-adjust: 100%;
+
+  font-family: $body-family;
+  color: $body-color;
+  font-size: $body-font-size;
+  font-weight: $body-weight;
+  line-height: $body-line-height;
+
+  box-sizing: border-box;
+  overflow: hidden;
+}
