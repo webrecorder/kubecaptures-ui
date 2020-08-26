@@ -2,6 +2,9 @@ const path = require('path');
 const webpack = require('webpack');
 const MiniCssExtractPlugin = require('mini-css-extract-plugin');
 
+const outputDir = process.env.APP_OUTPUT_DIR || path.join(__dirname, "./dist/");
+
+
 module.exports = {
   mode: 'production',
   entry: {
@@ -9,7 +12,7 @@ module.exports = {
   },
   //devtool: 'inline-source-map',
   output: {
-    path: path.join(__dirname, "./dist/"),
+    path: outputDir,
     filename: '[name].js',
     globalObject: 'self',
     libraryTarget: 'self',

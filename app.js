@@ -554,7 +554,6 @@ class JobResult extends LitElement {
       <div class="preview">
         <replay-web-page
           source="${this.result.accessUrl}"
-          embed="replayonly"
           url="${this.result.captureUrl}"></replay-web-page>
       </div>
       ` : html``}
