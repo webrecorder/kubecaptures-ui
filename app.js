@@ -287,6 +287,7 @@ class WitnessApp extends LitElement {
         </form>
       </div>
       ${this.results.length ? html`
+      <h2 class="is-sr-only">Submitted Jobs</h2>
       <div class="sorter">
         <wr-sorter id="captures"
           .defaultKey="startTime"
@@ -532,6 +533,7 @@ class JobResult extends LitElement {
 
     return html`
       <div class="columns" @dblclick="${this.onTogglePreview}">
+        <h3 class="is-sr-only">Capture of ${this.result.captureUrl} (Job ${this.result.jobid}, index ${this.result.index})</h3>
         <div class="column is-1">
           <p class="minihead">Status</p>
           ${this.renderStatus()}
