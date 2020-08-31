@@ -261,14 +261,14 @@ class WitnessApp extends LitElement {
           ${this.csrftoken ? html`
             <input type="hidden" name="${this.csrftoken_name}" value="${this.csrftoken}"/>` : ``}
           <div class="field">
-          <label class="label">URLs</label>
+            <label for="urls" class="label">URLs</label>
             <div class="control">
               <textarea id="urls" rows="3" required class="textarea is-link" placeholder="Enter one or more URLs on each line"></textarea>
             </div>
           </div>
 
           <div class="field">
-            <label class="label">Label (Optional)</label>
+            <label for="tag" class="label">Label (Optional)</label>
             <div class="control">
               <input id="tag" type="text" class="input" value="My Archive" placeholder="My Archive"/>
             </div>
