@@ -432,7 +432,7 @@ class JobResult extends LitElement {
         vertical-align: middle;
       }
 
-      button.button.is-loading::after {
+      .button.is-loading::after {
         border-color: transparent transparent grey grey !important;
       }
 
@@ -480,18 +480,22 @@ class JobResult extends LitElement {
       case "Complete":
         return html`
         <p>
-          <fa-icon class="check" .svg="${faCheck}"/>
+          <fa-icon class="check" .svg="${faCheck}" aria-hidden="true"></fa-icon>
+          <span class="is-sr-only">Complete</span>
         </p>`;
 
       case "In progress":
         return html`
-        <p><button class="is-loading button in-progress"></button></p>
-        `;
+        <p>
+          <span class="is-loading button in-progress" aria-hidden="true"></span>
+          <span class="is-sr-only">In Progress</span>
+        </p>`;
 
       case "Failed":
         return html`
         <p>
-          <fa-icon class="failed" .svg="${faX}"/>
+          <fa-icon class="failed" .svg="${faX}" aria-hidden="true"></fa-icon>
+          <span class="is-sr-only">Failed</span>
         </p>`;
     }
   }
@@ -499,24 +503,25 @@ class JobResult extends LitElement {
   renderControls() {
     return html`
         ${this.result.status === "Complete" ? html`
-        <a class="preview-toggle" @click="${this.onTogglePreview}">
-          <span class="is-hidden-tablet preview-text">Preview</span>
-          <fa-icon size="1.5em" .svg="${this.showPreview ? faDown : faRight}"/>
+        <a role="button" class="preview-toggle" @click="${this.onTogglePreview}" aria-label="Preview Capture" aria-expanded="${this.showPreview}">
+          <span class="is-hidden-tablet preview-text" aria-hidden="true">Preview</span>
+          <fa-icon size="1.5em" .svg="${this.showPreview ? faDown : faRight}" aria-hidden="true"></fa-icon>
         </a>
-        <a href="${this.result.accessUrl}" class="download" title="Download Capture">
-          <fa-icon .svg="${faDownload}"/>
+        <a href="${this.result.accessUrl}" class="download" aria-label="Download Capture" title="Download Capture">
+          <fa-icon .svg="${faDownload}" aria-hidden="true"></fa-icon>
         </a>` : ``}
 
         ${this.result.status !== "In progress" ? html`
-        <a @click="${this.onRetry}" title="Retry Capture" class="retry">
-          <fa-icon .svg="${faRedo}"></fa-icon>
+        <a role="button" @click="${this.onRetry}" aria-label="Retry Capture" title="Retry Capture" class="retry">
+          <fa-icon .svg="${faRedo}" aria-hidden="true"></fa-icon>
         </a>` : ``}
 
         ${!this.isDeleting ? html`
-          <a @click="${this.onDelete}" title="Delete Capture" class="deleter">
-            <fa-icon .svg="${faDelete}"></fa-icon>
+          <a role="button" @click="${this.onDelete}" aria-label="Delete Capture" title="Delete Capture" class="deleter">
+            <fa-icon .svg="${faDelete}" aria-hidden="true"></fa-icon>
           </a>` :  html`
-          <button class="is-loading button"></button>
+          <span class="is-loading button" aria-hidden="true"></span>
+          <span class="is-sr-only">Deletion In Progress</span>
           `}
         `;
   }
@@ -525,14 +530,14 @@ class JobResult extends LitElement {
     const tag = this.result.userTag || this.result.jobid;
 
     return html`
-      <nav class="columns" @dblclick="${this.onTogglePreview}">
+      <div class="columns" @dblclick="${this.onTogglePreview}">
         <div class="column is-1">
           <p class="minihead">Status</p>
           ${this.renderStatus()}
         </div>
         <div class="column clip is-2">
           <p class="minihead">Label</p>
-          <p title="${tag}">${tag}</p>
+          <p>${tag}</p>
         </div>
         <div class="column is-3">
           <p class="minihead">Start Date</p>
@@ -540,16 +545,18 @@ class JobResult extends LitElement {
         </div>
         <div class="column clip">
           <p class="minihead">URL</p>
-          <p class="url" title="${this.result.captureUrl}">${this.result.captureUrl}</p>
+          <p class="url">${this.result.captureUrl}</p>
         </div>
         <div class="column is-1">
           <p class="minihead">Size</p>
-          <p title="Size">${this.size >= 0 ? prettyBytes(this.size) : "-"}</p>
+          <p>${this.size >= 0 ? prettyBytes(this.size) : html`
+            <span aria-hidden="true">-</span><span class="is-sr-only">0</span>`}
+          </p>
         </div>
         <div class="column controls ${this.result.status === "Complete" ? "success" : ""} is-2">
           ${this.renderControls()}
         </div>
-      </nav>
+      </div>
       ${this.showPreview ? html`
       <div class="preview">
         <replay-web-page
