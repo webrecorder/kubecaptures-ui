@@ -408,7 +408,7 @@ class JobResult extends LitElement {
 
       .column.controls {
         display: flex;
-        flex-direction: row-reverse;
+        flex-direction: row;
         justify-content: flex-start;
       }
 
@@ -458,6 +458,7 @@ class JobResult extends LitElement {
 
       .preview-toggle fa-icon {
         margin: 0px;
+        margin-top: -2px;
       }
 
       .check {
@@ -502,28 +503,28 @@ class JobResult extends LitElement {
 
   renderControls() {
     return html`
-        ${this.result.status === "Complete" ? html`
-        <a role="button" class="preview-toggle" @click="${this.onTogglePreview}" aria-label="Preview Capture" aria-expanded="${this.showPreview}">
-          <span class="is-hidden-tablet preview-text" aria-hidden="true">Preview</span>
-          <fa-icon size="1.5em" .svg="${this.showPreview ? faDown : faRight}" aria-hidden="true"></fa-icon>
-        </a>
-        <a href="${this.result.accessUrl}" class="download" aria-label="Download Capture" title="Download Capture">
-          <fa-icon .svg="${faDownload}" aria-hidden="true"></fa-icon>
-        </a>` : ``}
+      ${!this.isDeleting ? html`
+        <a role="button" @click="${this.onDelete}" aria-label="Delete Capture" title="Delete Capture" class="deleter">
+          <fa-icon .svg="${faDelete}" aria-hidden="true"></fa-icon>
+        </a>` :  html`
+        <span class="is-loading button" aria-hidden="true"></span>
+        <span class="is-sr-only">Deletion In Progress</span>
+      `}
 
-        ${this.result.status !== "In progress" ? html`
-        <a role="button" @click="${this.onRetry}" aria-label="Retry Capture" title="Retry Capture" class="retry">
-          <fa-icon .svg="${faRedo}" aria-hidden="true"></fa-icon>
-        </a>` : ``}
+      ${this.result.status !== "In progress" ? html`
+      <a role="button" @click="${this.onRetry}" aria-label="Retry Capture" title="Retry Capture" class="retry">
+        <fa-icon .svg="${faRedo}" aria-hidden="true"></fa-icon>
+      </a>` : ``}
 
-        ${!this.isDeleting ? html`
-          <a role="button" @click="${this.onDelete}" aria-label="Delete Capture" title="Delete Capture" class="deleter">
-            <fa-icon .svg="${faDelete}" aria-hidden="true"></fa-icon>
-          </a>` :  html`
-          <span class="is-loading button" aria-hidden="true"></span>
-          <span class="is-sr-only">Deletion In Progress</span>
-          `}
-        `;
+      ${this.result.status === "Complete" ? html`
+      <a href="${this.result.accessUrl}" class="download" aria-label="Download Capture" title="Download Capture">
+        <fa-icon .svg="${faDownload}" aria-hidden="true"></fa-icon>
+      </a>
+      <a role="button" class="preview-toggle" @click="${this.onTogglePreview}" aria-label="Preview Capture" aria-expanded="${this.showPreview}">
+        <span class="is-hidden-tablet preview-text" aria-hidden="true">Preview</span>
+        <fa-icon size="1.5em" .svg="${this.showPreview ? faDown : faRight}" aria-hidden="true"></fa-icon>
+      </a>`: ``}
+    `;
   }
 
   render() {
