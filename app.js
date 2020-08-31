@@ -68,7 +68,7 @@ class WitnessApp extends LitElement {
   static get properties() {
     return {
       apiprefix: { type: String },
-      
+
       results: { type: Array },
       sortedResults: { type: Array},
 
@@ -90,7 +90,7 @@ class WitnessApp extends LitElement {
     }, 5000);
   }
 
-  async doUpdateResults() { 
+  async doUpdateResults() {
     if (!TEST_DATA) {
       let resp = await fetch(`${this.apiprefix}/captures`);
       resp = await resp.json();
@@ -121,7 +121,7 @@ class WitnessApp extends LitElement {
       .result:nth-child(odd) {
         background-color: #eee;
       }
-      
+
       .result:nth-child(even) {
         background-color: #ddd;
       }
@@ -361,7 +361,7 @@ class JobResult extends LitElement {
     }
 
     const res = await fetch(this.result.accessUrl, {method: "HEAD"});
-    
+
     if (res.status === 200) {
       this.props.size = Number(res.headers.get("Content-Length"));
       this.result.size = this.props.size;
