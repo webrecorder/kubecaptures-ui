@@ -29,6 +29,8 @@ class WitnessApp extends LitElement {
   constructor() {
     super();
     this.apiprefix = "";
+    this.contactEmail = "";
+
     this.results = [];
     this.sortedResults = [];
     this.replaybase = "/replay/";
@@ -36,6 +38,9 @@ class WitnessApp extends LitElement {
     this.extraProps = {};
 
     this.csrftoken = "";
+
+    this.fieldErrorMessage = "";
+    this.submittedUrlsInvalid = false;
 
     this.errorMessage = "";
   }
@@ -68,6 +73,7 @@ class WitnessApp extends LitElement {
   static get properties() {
     return {
       apiprefix: { type: String },
+      contactEmail: { type: String },
 
       results: { type: Array },
       sortedResults: { type: Array},
@@ -78,7 +84,10 @@ class WitnessApp extends LitElement {
 
       csrftoken: { type: String },
 
-      errorMessage: { type: String }
+      fieldErrorMessage: { type: String },
+      submittedUrlsInvalid: { type: Boolean },
+
+      errorMessage: { type: String },
     }
   }
 
@@ -151,9 +160,18 @@ class WitnessApp extends LitElement {
         text-align: left;
       }
 
+      .error-wrapper {
+        text-align: right;
+      }
+
       .error {
         color: rgb(241, 70, 104);
         padding: 0.5em;
+      }
+
+      .error a {
+        color: rgb(241, 70, 104);
+        text-decoration: underline;
       }
 
       .submit-error {
@@ -166,10 +184,11 @@ class WitnessApp extends LitElement {
   async onSubmit(event) {
     event.preventDefault();
 
+    this.submittedUrlsInvalid = false;
+    this.fieldErrorMessage = "";
     this.errorMessage = "";
 
     const textArea = this.renderRoot.querySelector("#urls");
-
     const tagField = this.renderRoot.querySelector("#tag");
 
     const text = textArea.value;
@@ -184,7 +203,12 @@ class WitnessApp extends LitElement {
         continue;
       }
       if (!/https?:\/\/[\w]+/.exec(url)) {
-        this.errorMessage = "The list above contains invalid URLs. Only http:// and https:// URLs are supported";
+        this.submittedUrlsInvalid = true;
+        this.fieldErrorMessage = `Invalid URL "${url}". Only URLs beginning with http:// and https:// are supported.`;
+
+        // Send keyboard focus to the invalid field, for a11y.
+        // Confirmed: focus is maintained through the component re-rendering.
+        textArea.focus();
         return;
       }
       urls.push(url);
@@ -194,10 +218,9 @@ class WitnessApp extends LitElement {
 
     if (res.status === 200) {
       this.doUpdateResults();
-
       textArea.value = "";
     } else {
-      this.errorMessage = "Sorry, an error has occured. Capture Not Started";
+      this.errorMessage = html `Sorry, an error occurred: capture was not started.${this.contactEmail ? html `<br>Please try again, or <a href="mailto:${this.contactEmail}">contact us</a> for additional assistance.` : ``}`;
     }
   }
 
@@ -263,14 +286,18 @@ class WitnessApp extends LitElement {
           <div class="field">
             <label for="urls" class="label">URLs</label>
             <div class="control">
-              <textarea id="urls" rows="3" required class="textarea is-link" placeholder="Enter one or more URLs on each line"></textarea>
+              <textarea id="urls" rows="3" required class="textarea ${this.submittedUrlsInvalid ? "is-danger": ""}"
+                        placeholder="Enter one or more URLs on each line"
+                        aria-invalid="${this.submittedUrlsInvalid ? "true": "false"}"
+                        aria-describedby="urls-errors"></textarea>
             </div>
+            ${this.submittedUrlsInvalid ? html`<p id="urls-errors" class="help is-danger">${this.fieldErrorMessage}</p>` : ``}
           </div>
 
           <div class="field">
             <label for="tag" class="label">Label (Optional)</label>
             <div class="control">
-              <input id="tag" type="text" class="input" value="My Archive" placeholder="My Archive"/>
+              <input id="tag" type="text" class="input" value="" placeholder="My Collection"/>
             </div>
           </div>
 
@@ -280,9 +307,11 @@ class WitnessApp extends LitElement {
                 <button type="submit" class="button is-link">Capture</button>
               </div>
             </div>
-            ${this.errorMessage ? html`
-          <span class="error">${this.errorMessage}</span>
-          ` : ``}
+            <span class="error-wrapper" aria-live="assertive">
+              ${this.errorMessage ? html`
+              <span class="error">${this.errorMessage}</span>
+              ` : ``}
+            </span>
           </div>
         </form>
       </div>
