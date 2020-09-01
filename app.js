@@ -568,7 +568,8 @@ class JobResult extends LitElement {
       <div class="preview">
         <replay-web-page
           source="${this.result.accessUrl}"
-          url="${this.result.captureUrl}"></replay-web-page>
+          url="${this.result.captureUrl}">
+        </replay-web-page>
       </div>
       ` : html``}
 
@@ -594,7 +595,6 @@ class JobResult extends LitElement {
     event.preventDefault();
     const detail = this.result;
     this.isDeleting = true;
-
     this.dispatchEvent(new CustomEvent("on-delete", {detail}));
   }
 
