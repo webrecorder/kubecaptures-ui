@@ -505,7 +505,7 @@ class JobResult extends LitElement {
   renderControls() {
     return html`
       ${!this.isDeleting ? html`
-        <a role="button" @click="${this.onDelete}" aria-label="Delete Capture" title="Delete Capture" class="deleter">
+        <a href="#" role="button" @click="${this.onDelete}" aria-label="Delete Capture" title="Delete Capture" class="deleter">
           <fa-icon .svg="${faDelete}" aria-hidden="true"></fa-icon>
         </a>` :  html`
         <span class="is-loading button" aria-hidden="true"></span>
@@ -513,7 +513,7 @@ class JobResult extends LitElement {
       `}
 
       ${this.result.status !== "In progress" ? html`
-      <a role="button" @click="${this.onRetry}" aria-label="Retry Capture" title="Retry Capture" class="retry">
+      <a href="#" role="button" @click="${this.onRetry}" aria-label="Retry Capture" title="Retry Capture" class="retry">
         <fa-icon .svg="${faRedo}" aria-hidden="true"></fa-icon>
       </a>` : ``}
 
@@ -521,7 +521,7 @@ class JobResult extends LitElement {
       <a href="${this.result.accessUrl}" class="download" aria-label="Download Capture" title="Download Capture">
         <fa-icon .svg="${faDownload}" aria-hidden="true"></fa-icon>
       </a>
-      <a role="button" class="preview-toggle" @click="${this.onTogglePreview}" aria-label="Preview Capture" aria-expanded="${this.showPreview}">
+      <a href="#" role="button" class="preview-toggle" @click="${this.onTogglePreview}" aria-label="Preview Capture" aria-expanded="${this.showPreview}">
         <span class="is-hidden-tablet preview-text" aria-hidden="true">Preview</span>
         <fa-icon size="1.5em" .svg="${this.showPreview ? faDown : faRight}" aria-hidden="true"></fa-icon>
       </a>`: ``}
@@ -578,6 +578,7 @@ class JobResult extends LitElement {
   }
 
   onDelete(event) {
+    event.preventDefault();
     const detail = this.result;
     this.isDeleting = true;
 
@@ -585,6 +586,7 @@ class JobResult extends LitElement {
   }
 
   onRetry(event) {
+    event.preventDefault();
     this.dispatchEvent(new CustomEvent("on-retry"));
   }
 }
