@@ -230,7 +230,7 @@ class WitnessApp extends LitElement {
       this.renderRoot.querySelector("#success-message").focus();
 
     } else {
-      this.errorMessage = html `Sorry, an error occurred: capture was not started.${this.contactEmail ? html `<br>Please try again, or <a href="mailto:${this.contactEmail}">contact us</a> for additional assistance.` : ``}`;
+      this.errorMessage = html `Sorry, an error occurred: capture was not started.${this.contactMessage()}`;
     }
   }
 
@@ -263,10 +263,14 @@ class WitnessApp extends LitElement {
 
     const res = await fetch(`${this.apiprefix}/capture/${jobid}/${index}`, {method: "DELETE", headers});
     if (res.status != 200) {
-      this.errorMessage = "Sorry, an error has occured. Capture Not Started";
+      this.errorMessage = html `Sorry, an error occurred: deletion failed.${this.contactMessage()}`;
     } else {
       this.doUpdateResults();
     }
+  }
+
+  contactMessage() {
+    return html `${this.contactEmail ? html `<br>Please try again, or <a href="mailto:${this.contactEmail}">contact us</a> for additional assistance.` : ``}`;
   }
 
   onSortChanged(event) {
@@ -283,7 +287,7 @@ class WitnessApp extends LitElement {
     if (res.status === 200) {
       this.doUpdateResults();
     } else {
-      this.errorMessage = "Sorry, an error has occured. Capture Not Started";
+      this.errorMessage = html `Sorry, an error has occurred: capture not retried.${this.contactMessage()}`;
     }
   }
 
