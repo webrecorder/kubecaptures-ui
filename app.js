@@ -43,6 +43,7 @@ class WitnessApp extends LitElement {
     this.submittedUrlsInvalid = false;
 
     this.errorMessage = "";
+    this.successMessage = ""
   }
 
   static get sortKeys() {
@@ -88,6 +89,7 @@ class WitnessApp extends LitElement {
       submittedUrlsInvalid: { type: Boolean },
 
       errorMessage: { type: String },
+      successMessage: { type: String },
     }
   }
 
@@ -187,6 +189,7 @@ class WitnessApp extends LitElement {
     this.submittedUrlsInvalid = false;
     this.fieldErrorMessage = "";
     this.errorMessage = "";
+    this.successMessage = "";
 
     const textArea = this.renderRoot.querySelector("#urls");
     const tagField = this.renderRoot.querySelector("#tag");
@@ -219,6 +222,13 @@ class WitnessApp extends LitElement {
     if (res.status === 200) {
       this.doUpdateResults();
       textArea.value = "";
+
+      // Send keyboard focus to a success message, for a11y.
+      const jobDetails = await res.json();
+      this.successMessage = `Success: ${jobDetails.urls} submitted. JobID: ${jobDetails.jobid}`;
+      await this.updateComplete;
+      this.renderRoot.querySelector("#success-message").focus();
+
     } else {
       this.errorMessage = html `Sorry, an error occurred: capture was not started.${this.contactEmail ? html `<br>Please try again, or <a href="mailto:${this.contactEmail}">contact us</a> for additional assistance.` : ``}`;
     }
@@ -312,6 +322,9 @@ class WitnessApp extends LitElement {
               <span class="error">${this.errorMessage}</span>
               ` : ``}
             </span>
+            ${this.successMessage ? html`
+            <span id="success-message" class="is-sr-only" tabindex="-1">${this.successMessage}</span>
+            ` : ``}
           </div>
         </form>
       </div>
