@@ -356,6 +356,10 @@ class JobResult extends LitElement {
     }
   }
 
+  fullName(){
+    return `Capture of ${this.result.captureUrl} (Job ${this.result.jobid}, index ${this.result.index})`
+  }
+
   async checkSize() {
     if (this.size >= 0 || this.result.status !== "Complete") {
       return;
@@ -505,7 +509,7 @@ class JobResult extends LitElement {
   renderControls() {
     return html`
       ${!this.isDeleting ? html`
-        <a href="#" role="button" @click="${this.onDelete}" @keyup="${this.clickOnSpacebarPress}" aria-label="Delete Capture" title="Delete Capture" class="deleter">
+        <a href="#" role="button" @click="${this.onDelete}" @keyup="${this.clickOnSpacebarPress}" aria-label="Delete ${this.fullName()}" title="Delete Capture" class="deleter">
           <fa-icon .svg="${faDelete}" aria-hidden="true"></fa-icon>
         </a>` :  html`
         <span class="is-loading button" aria-hidden="true"></span>
@@ -513,15 +517,15 @@ class JobResult extends LitElement {
       `}
 
       ${this.result.status !== "In progress" ? html`
-      <a href="#" role="button" @click="${this.onRetry}" @keyup="${this.clickOnSpacebarPress}" aria-label="Retry Capture" title="Retry Capture" class="retry">
+      <a href="#" role="button" @click="${this.onRetry}" @keyup="${this.clickOnSpacebarPress}" aria-label="Retry ${this.fullName()}" title="Retry Capture" class="retry">
         <fa-icon .svg="${faRedo}" aria-hidden="true"></fa-icon>
       </a>` : ``}
 
       ${this.result.status === "Complete" ? html`
-      <a href="${this.result.accessUrl}" class="download" aria-label="Download Capture" title="Download Capture">
+      <a href="${this.result.accessUrl}" class="download" aria-label="Download ${this.fullName()}" title="Download Capture">
         <fa-icon .svg="${faDownload}" aria-hidden="true"></fa-icon>
       </a>
-      <a href="#" role="button" class="preview-toggle" @click="${this.onTogglePreview}" @keyup="${this.clickOnSpacebarPress}" aria-label="Preview Capture" aria-expanded="${this.showPreview}">
+      <a href="#" role="button" class="preview-toggle" @click="${this.onTogglePreview}" @keyup="${this.clickOnSpacebarPress}" aria-label="Preview ${this.fullName()}" aria-expanded="${this.showPreview}">
         <span class="is-hidden-tablet preview-text" aria-hidden="true">Preview</span>
         <fa-icon size="1.5em" .svg="${this.showPreview ? faDown : faRight}" aria-hidden="true"></fa-icon>
       </a>`: ``}
@@ -533,7 +537,7 @@ class JobResult extends LitElement {
 
     return html`
       <div class="columns" @dblclick="${this.onTogglePreview}">
-        <h3 class="is-sr-only">Capture of ${this.result.captureUrl} (Job ${this.result.jobid}, index ${this.result.index})</h3>
+        <h3 class="is-sr-only">${this.fullName()}</h3>
         <div class="column is-1">
           <p class="minihead">Status</p>
           ${this.renderStatus()}
