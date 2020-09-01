@@ -1,5 +1,8 @@
 @charset "utf-8";
 
+// Colors
+$orange: #DD671A;
+
 // Set placeholder contrast to ~4.5:1 for WCAG AA compliance
 $input-placeholder-color: #757575;
 $input-disabled-placeholder-color: #707070;
@@ -8,6 +11,11 @@ $input-disabled-placeholder-color: #707070;
 }
 
 @import "node_modules/bulma/bulma";
+
+// focus/hover styles for buttons
+.button.is-link:focus, .button.is-link:hover {
+  background-color: $orange;
+}
 
 :host {
   font-size: $body-size;
