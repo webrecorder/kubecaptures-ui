@@ -103,9 +103,13 @@ class WitnessApp extends LitElement {
 
   async doUpdateResults() {
     if (!TEST_DATA) {
-      let resp = await fetch(`${this.apiprefix}/captures`);
-      resp = await resp.json();
-      this.results = resp.jobs;
+      let res = await fetch(`${this.apiprefix}/captures`);
+      if (res.status == 200) {
+        res = await res.json();
+        this.results = res.jobs;
+      } else {
+        this.errorMessage = html `Sorry, the list of submitted captures is not available.${this.contactMessage()}`
+      }
     } else {
       this.results = JSON.parse(TEST_DATA).jobs;
     }
