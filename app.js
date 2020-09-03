@@ -407,7 +407,7 @@ class JobResult extends LitElement {
   }
 
   fullName(){
-    return `Capture of ${this.result.captureUrl} (Job ${this.result.jobid}, index ${this.result.index})`
+    return `${this.result.userTag ? `Batch "${this.result.userTag }",`: '' } Capture of ${this.result.captureUrl} from ${new Date(this.result.startTime).toLocaleString()}`
   }
 
   async checkSize() {
