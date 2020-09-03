@@ -315,7 +315,7 @@ class WitnessApp extends LitElement {
           <div class="field">
             <label for="tag" class="label">Label (Optional)</label>
             <div class="control">
-              <input id="tag" type="text" class="input" value="" placeholder="My Collection"/>
+              <input id="tag" type="text" class="input" value=""/>
             </div>
           </div>
 
@@ -589,7 +589,7 @@ class JobResult extends LitElement {
   }
 
   render() {
-    const tag = this.result.userTag || this.result.jobid;
+    const tag = this.result.userTag || html `<span aria-hidden="true">-</span><span class="is-sr-only">None</span>`;
 
     return html`
       <div class="columns" @dblclick="${this.onTogglePreview}">
