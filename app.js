@@ -29,6 +29,8 @@ class WitnessApp extends LitElement {
   constructor() {
     super();
     this.apiprefix = "";
+    this.contactEmail = "";
+
     this.results = [];
     this.sortedResults = [];
     this.replaybase = "/replay/";
@@ -37,7 +39,11 @@ class WitnessApp extends LitElement {
 
     this.csrftoken = "";
 
+    this.fieldErrorMessage = "";
+    this.submittedUrlsInvalid = false;
+
     this.errorMessage = "";
+    this.successMessage = ""
   }
 
   static get sortKeys() {
@@ -68,7 +74,8 @@ class WitnessApp extends LitElement {
   static get properties() {
     return {
       apiprefix: { type: String },
-      
+      contactEmail: { type: String },
+
       results: { type: Array },
       sortedResults: { type: Array},
 
@@ -78,7 +85,11 @@ class WitnessApp extends LitElement {
 
       csrftoken: { type: String },
 
-      errorMessage: { type: String }
+      fieldErrorMessage: { type: String },
+      submittedUrlsInvalid: { type: Boolean },
+
+      errorMessage: { type: String },
+      successMessage: { type: String },
     }
   }
 
@@ -90,11 +101,15 @@ class WitnessApp extends LitElement {
     }, 5000);
   }
 
-  async doUpdateResults() { 
+  async doUpdateResults() {
     if (!TEST_DATA) {
-      let resp = await fetch(`${this.apiprefix}/captures`);
-      resp = await resp.json();
-      this.results = resp.jobs;
+      let res = await fetch(`${this.apiprefix}/captures`);
+      if (res.status == 200) {
+        res = await res.json();
+        this.results = res.jobs;
+      } else {
+        this.errorMessage = html `Sorry, the list of submitted captures is not available.${this.contactMessage()}`
+      }
     } else {
       this.results = JSON.parse(TEST_DATA).jobs;
     }
@@ -121,7 +136,7 @@ class WitnessApp extends LitElement {
       .result:nth-child(odd) {
         background-color: #eee;
       }
-      
+
       .result:nth-child(even) {
         background-color: #ddd;
       }
@@ -151,9 +166,18 @@ class WitnessApp extends LitElement {
         text-align: left;
       }
 
+      .error-wrapper {
+        text-align: right;
+      }
+
       .error {
         color: rgb(241, 70, 104);
         padding: 0.5em;
+      }
+
+      .error a {
+        color: rgb(241, 70, 104);
+        text-decoration: underline;
       }
 
       .submit-error {
@@ -166,10 +190,12 @@ class WitnessApp extends LitElement {
   async onSubmit(event) {
     event.preventDefault();
 
+    this.submittedUrlsInvalid = false;
+    this.fieldErrorMessage = "";
     this.errorMessage = "";
+    this.successMessage = "";
 
     const textArea = this.renderRoot.querySelector("#urls");
-
     const tagField = this.renderRoot.querySelector("#tag");
 
     const text = textArea.value;
@@ -184,7 +210,12 @@ class WitnessApp extends LitElement {
         continue;
       }
       if (!/https?:\/\/[\w]+/.exec(url)) {
-        this.errorMessage = "The list above contains invalid URLs. Only http:// and https:// URLs are supported";
+        this.submittedUrlsInvalid = true;
+        this.fieldErrorMessage = `Invalid URL "${url}". Only URLs beginning with http:// and https:// are supported.`;
+
+        // Send keyboard focus to the invalid field, for a11y.
+        // Confirmed: focus is maintained through the component re-rendering.
+        textArea.focus();
         return;
       }
       urls.push(url);
@@ -194,10 +225,16 @@ class WitnessApp extends LitElement {
 
     if (res.status === 200) {
       this.doUpdateResults();
-
       textArea.value = "";
+
+      // Send keyboard focus to a success message, for a11y.
+      const jobDetails = await res.json();
+      this.successMessage = `Success: ${jobDetails.urls} submitted. JobID: ${jobDetails.jobid}`;
+      await this.updateComplete;
+      this.renderRoot.querySelector("#success-message").focus();
+
     } else {
-      this.errorMessage = "Sorry, an error has occured. Capture Not Started";
+      this.errorMessage = html `Sorry, an error occurred: capture was not started.${this.contactMessage()}`;
     }
   }
 
@@ -230,10 +267,14 @@ class WitnessApp extends LitElement {
 
     const res = await fetch(`${this.apiprefix}/capture/${jobid}/${index}`, {method: "DELETE", headers});
     if (res.status != 200) {
-      this.errorMessage = "Sorry, an error has occured. Capture Not Started";
+      this.errorMessage = html `Sorry, an error occurred: deletion failed.${this.contactMessage()}`;
     } else {
       this.doUpdateResults();
     }
+  }
+
+  contactMessage() {
+    return html `${this.contactEmail ? html `<br>Please try again, or <a href="mailto:${this.contactEmail}">contact us</a> for additional assistance.` : ``}`;
   }
 
   onSortChanged(event) {
@@ -250,7 +291,7 @@ class WitnessApp extends LitElement {
     if (res.status === 200) {
       this.doUpdateResults();
     } else {
-      this.errorMessage = "Sorry, an error has occured. Capture Not Started";
+      this.errorMessage = html `Sorry, an error has occurred: capture not retried.${this.contactMessage()}`;
     }
   }
 
@@ -261,16 +302,20 @@ class WitnessApp extends LitElement {
           ${this.csrftoken ? html`
             <input type="hidden" name="${this.csrftoken_name}" value="${this.csrftoken}"/>` : ``}
           <div class="field">
-          <label class="label">URLs</label>
+            <label for="urls" class="label">URLs</label>
             <div class="control">
-              <textarea id="urls" rows="3" required class="textarea is-link" placeholder="Enter one or more URLs on each line"></textarea>
+              <textarea id="urls" rows="3" required class="textarea ${this.submittedUrlsInvalid ? "is-danger": ""}"
+                        placeholder="Enter one or more URLs on each line"
+                        aria-invalid="${this.submittedUrlsInvalid ? "true": "false"}"
+                        aria-describedby="urls-errors"></textarea>
             </div>
+            ${this.submittedUrlsInvalid ? html`<p id="urls-errors" class="help is-danger">${this.fieldErrorMessage}</p>` : ``}
           </div>
 
           <div class="field">
-            <label class="label">Label (Optional)</label>
+            <label for="tag" class="label">Label (Optional)</label>
             <div class="control">
-              <input id="tag" type="text" class="input" value="My Archive" placeholder="My Archive"/>
+              <input id="tag" type="text" class="input" value=""/>
             </div>
           </div>
 
@@ -280,13 +325,19 @@ class WitnessApp extends LitElement {
                 <button type="submit" class="button is-link">Capture</button>
               </div>
             </div>
-            ${this.errorMessage ? html`
-          <span class="error">${this.errorMessage}</span>
-          ` : ``}
+            <span class="error-wrapper" aria-live="assertive">
+              ${this.errorMessage ? html`
+              <span class="error">${this.errorMessage}</span>
+              ` : ``}
+            </span>
+            ${this.successMessage ? html`
+            <span id="success-message" class="is-sr-only" tabindex="-1">${this.successMessage}</span>
+            ` : ``}
           </div>
         </form>
       </div>
       ${this.results.length ? html`
+      <h2 class="is-sr-only">Submitted Jobs</h2>
       <div class="sorter">
         <wr-sorter id="captures"
           .defaultKey="startTime"
@@ -355,13 +406,17 @@ class JobResult extends LitElement {
     }
   }
 
+  fullName(){
+    return `${this.result.userTag ? `Batch "${this.result.userTag }",`: '' } Capture of ${this.result.captureUrl} from ${new Date(this.result.startTime).toLocaleString()}`
+  }
+
   async checkSize() {
     if (this.size >= 0 || this.result.status !== "Complete") {
       return;
     }
 
     const res = await fetch(this.result.accessUrl, {method: "HEAD"});
-    
+
     if (res.status === 200) {
       this.props.size = Number(res.headers.get("Content-Length"));
       this.result.size = this.props.size;
@@ -408,8 +463,14 @@ class JobResult extends LitElement {
 
       .column.controls {
         display: flex;
-        flex-direction: row-reverse;
-        justify-content: flex-start;
+        flex-direction: row;
+        justify-content: flex-end;
+      }
+
+      @media screen and (max-width: 769px) {
+        .column.controls {
+          justify-content: flex-start;
+        }
       }
 
       .column.controls.success {
@@ -432,7 +493,7 @@ class JobResult extends LitElement {
         vertical-align: middle;
       }
 
-      button.button.is-loading::after {
+      .button.is-loading::after {
         border-color: transparent transparent grey grey !important;
       }
 
@@ -458,6 +519,7 @@ class JobResult extends LitElement {
 
       .preview-toggle fa-icon {
         margin: 0px;
+        margin-top: -2px;
       }
 
       .check {
@@ -480,59 +542,65 @@ class JobResult extends LitElement {
       case "Complete":
         return html`
         <p>
-          <fa-icon class="check" .svg="${faCheck}"/>
+          <fa-icon class="check" .svg="${faCheck}" aria-hidden="true"></fa-icon>
+          <span class="is-sr-only">Complete</span>
         </p>`;
 
       case "In progress":
         return html`
-        <p><button class="is-loading button in-progress"></button></p>
-        `;
+        <p>
+          <span class="is-loading button in-progress" aria-hidden="true"></span>
+          <span class="is-sr-only">In Progress</span>
+        </p>`;
 
       case "Failed":
         return html`
         <p>
-          <fa-icon class="failed" .svg="${faX}"/>
+          <fa-icon class="failed" .svg="${faX}" aria-hidden="true"></fa-icon>
+          <span class="is-sr-only">Failed</span>
         </p>`;
     }
   }
 
   renderControls() {
     return html`
-        ${this.result.status === "Complete" ? html`
-        <a class="preview-toggle" @click="${this.onTogglePreview}">
-          <span class="is-hidden-tablet preview-text">Preview</span>
-          <fa-icon size="1.5em" .svg="${this.showPreview ? faDown : faRight}"/>
-        </a>
-        <a href="${this.result.accessUrl}" class="download" title="Download Capture">
-          <fa-icon .svg="${faDownload}"/>
-        </a>` : ``}
+      ${!this.isDeleting ? html`
+        <a href="#" role="button" @click="${this.onDelete}" @keyup="${this.clickOnSpacebarPress}" aria-label="Delete ${this.fullName()}" title="Delete Capture" class="deleter">
+          <fa-icon .svg="${faDelete}" aria-hidden="true"></fa-icon>
+        </a>` :  html`
+        <span class="is-loading button" aria-hidden="true"></span>
+        <span class="is-sr-only">Deletion In Progress</span>
+      `}
 
-        ${this.result.status !== "In progress" ? html`
-        <a @click="${this.onRetry}" title="Retry Capture" class="retry">
-          <fa-icon .svg="${faRedo}"></fa-icon>
-        </a>` : ``}
+      ${this.result.status !== "In progress" ? html`
+      <a href="#" role="button" @click="${this.onRetry}" @keyup="${this.clickOnSpacebarPress}" aria-label="Retry ${this.fullName()}" title="Retry Capture" class="retry">
+        <fa-icon .svg="${faRedo}" aria-hidden="true"></fa-icon>
+      </a>` : ``}
 
-        ${!this.isDeleting ? html`
-          <a @click="${this.onDelete}" title="Delete Capture" class="deleter">
-            <fa-icon .svg="${faDelete}"></fa-icon>
-          </a>` :  html`
-          <button class="is-loading button"></button>
-          `}
-        `;
+      ${this.result.status === "Complete" ? html`
+      <a href="${this.result.accessUrl}" class="download" aria-label="Download ${this.fullName()}" title="Download Capture">
+        <fa-icon .svg="${faDownload}" aria-hidden="true"></fa-icon>
+      </a>
+      <a href="#" role="button" class="preview-toggle" @click="${this.onTogglePreview}" @keyup="${this.clickOnSpacebarPress}" aria-label="Preview ${this.fullName()}" aria-expanded="${this.showPreview}">
+        <span class="is-hidden-tablet preview-text" aria-hidden="true">Preview</span>
+        <fa-icon size="1.5em" .svg="${this.showPreview ? faDown : faRight}" aria-hidden="true"></fa-icon>
+      </a>`: ``}
+    `;
   }
 
   render() {
-    const tag = this.result.userTag || this.result.jobid;
+    const tag = this.result.userTag || html `<span aria-hidden="true">-</span><span class="is-sr-only">None</span>`;
 
     return html`
-      <nav class="columns" @dblclick="${this.onTogglePreview}">
+      <div class="columns" @dblclick="${this.onTogglePreview}">
+        <h3 class="is-sr-only">${this.fullName()}</h3>
         <div class="column is-1">
           <p class="minihead">Status</p>
           ${this.renderStatus()}
         </div>
         <div class="column clip is-2">
           <p class="minihead">Label</p>
-          <p title="${tag}">${tag}</p>
+          <p>${tag}</p>
         </div>
         <div class="column is-3">
           <p class="minihead">Start Date</p>
@@ -540,25 +608,37 @@ class JobResult extends LitElement {
         </div>
         <div class="column clip">
           <p class="minihead">URL</p>
-          <p class="url" title="${this.result.captureUrl}">${this.result.captureUrl}</p>
+          <p class="url">${this.result.captureUrl}</p>
         </div>
         <div class="column is-1">
           <p class="minihead">Size</p>
-          <p title="Size">${this.size >= 0 ? prettyBytes(this.size) : "-"}</p>
+          <p>${this.size >= 0 ? prettyBytes(this.size) : html`
+            <span aria-hidden="true">-</span><span class="is-sr-only">0</span>`}
+          </p>
         </div>
-        <div class="column controls ${this.result.status === "Complete" ? "success" : ""} is-2">
+        <div class="column controls ${this.result.status === "Complete" ? "success" : ""} is-3-tablet is-2-desktop">
           ${this.renderControls()}
         </div>
-      </nav>
+      </div>
       ${this.showPreview ? html`
       <div class="preview">
         <replay-web-page
           source="${this.result.accessUrl}"
-          url="${this.result.captureUrl}"></replay-web-page>
+          url="${this.result.captureUrl}">
+        </replay-web-page>
       </div>
       ` : html``}
 
     `;
+  }
+
+  clickOnSpacebarPress(event) {
+    // Buttons are expected to respond to both enter/return and spacebar.
+    // If using `<a>` with `role='button'`, assign this handler to keyup.
+    if (event.key == " ") {
+      event.preventDefault();
+      event.target.click();
+    }
   }
 
   onTogglePreview(event) {
@@ -568,13 +648,14 @@ class JobResult extends LitElement {
   }
 
   onDelete(event) {
+    event.preventDefault();
     const detail = this.result;
     this.isDeleting = true;
-
     this.dispatchEvent(new CustomEvent("on-delete", {detail}));
   }
 
   onRetry(event) {
+    event.preventDefault();
     this.dispatchEvent(new CustomEvent("on-retry"));
   }
 }
