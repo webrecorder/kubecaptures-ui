@@ -464,7 +464,13 @@ class JobResult extends LitElement {
       .column.controls {
         display: flex;
         flex-direction: row;
-        justify-content: flex-start;
+        justify-content: flex-end;
+      }
+
+      @media screen and (max-width: 769px) {
+        .column.controls {
+          justify-content: flex-start;
+        }
       }
 
       .column.controls.success {
@@ -610,7 +616,7 @@ class JobResult extends LitElement {
             <span aria-hidden="true">-</span><span class="is-sr-only">0</span>`}
           </p>
         </div>
-        <div class="column controls ${this.result.status === "Complete" ? "success" : ""} is-2">
+        <div class="column controls ${this.result.status === "Complete" ? "success" : ""} is-3-tablet is-2-desktop">
           ${this.renderControls()}
         </div>
       </div>
