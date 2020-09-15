@@ -4,6 +4,8 @@ import prettyBytes from 'pretty-bytes';
 
 import allCssRaw from './assets/ui.scss';
 
+import { formatDistance } from 'date-fns';
+
 import faDownload from '@fortawesome/fontawesome-free/svgs/solid/download.svg';
 import faDelete from '@fortawesome/fontawesome-free/svgs/solid/trash-alt.svg';
 
@@ -44,6 +46,8 @@ class WitnessApp extends LitElement {
 
     this.errorMessage = "";
     this.successMessage = ""
+
+    this.archiveEmbed = false;
   }
 
   static get sortKeys() {
@@ -59,6 +63,10 @@ class WitnessApp extends LitElement {
       {
         "key": "startTime",
         "name": "Start Time"
+      },
+      {
+        "key": "duration",
+        "name": "Duration"
       },
       {
         "key": "captureUrl",
@@ -90,6 +98,8 @@ class WitnessApp extends LitElement {
 
       errorMessage: { type: String },
       successMessage: { type: String },
+
+      archiveEmbed: { type: Boolean },
     }
   }
 
@@ -107,6 +117,7 @@ class WitnessApp extends LitElement {
       if (res.status == 200) {
         res = await res.json();
         this.results = res.jobs;
+        this.errorMessage = "";
       } else {
         this.errorMessage = html `Sorry, the list of submitted captures is not available.${this.contactMessage()}`
       }
@@ -120,11 +131,12 @@ class WitnessApp extends LitElement {
       const newProps = {};
 
       for (const result of this.results) {
-        const key = result.jobid + "-" + result.index;
+        const key = result.jobid;
         newProps[key] = this.extraProps[key] || {};
         if (newProps[key].size) {
           result.size = newProps[key].size;
         }
+        result.duration = new Date(result.elapsedTime) - new Date(result.startTime);
       }
 
       this.extraProps = newProps;
@@ -239,9 +251,11 @@ class WitnessApp extends LitElement {
   }
 
   async queueCapture(urls, tag) {
+    const embeds = this.archiveEmbed;
+
     const opts = {
       method: "POST",
-      body: JSON.stringify({urls, tag}),
+      body: JSON.stringify({urls, tag, embeds}),
       headers: {"Content-Type": "application/json"}
     };
 
@@ -253,9 +267,9 @@ class WitnessApp extends LitElement {
   }
 
   async onDelete(event) {
-    const { jobid, index } = event.detail;
+    const { jobid } = event.detail;
 
-    if (!jobid || !index) {
+    if (!jobid) {
       return;
     }
 
@@ -265,7 +279,7 @@ class WitnessApp extends LitElement {
       headers["X-CSRFToken"] = this.csrftoken;
     }
 
-    const res = await fetch(`${this.apiprefix}/capture/${jobid}/${index}`, {method: "DELETE", headers});
+    const res = await fetch(`${this.apiprefix}/capture/${jobid}`, {method: "DELETE", headers});
     if (res.status != 200) {
       this.errorMessage = html `Sorry, an error occurred: deletion failed.${this.contactMessage()}`;
     } else {
@@ -313,6 +327,13 @@ class WitnessApp extends LitElement {
           </div>
 
           <div class="field">
+            <label class="checkbox">
+              <input id="embed" type="checkbox" class="checkbox" @click="${(e) => this.archiveEmbed = !this.archiveEmbed}" ?value="${this.archiveEmbed}"/>
+              Archive Embedded Version (if available)
+            </label>
+          </div>
+
+          <div class="field">
             <label for="tag" class="label">Label (Optional)</label>
             <div class="control">
               <input id="tag" type="text" class="input" value=""/>
@@ -340,8 +361,8 @@ class WitnessApp extends LitElement {
       <h2 class="is-sr-only">Submitted Jobs</h2>
       <div class="sorter">
         <wr-sorter id="captures"
-          .defaultKey="startTime"
-          .defaultDesc="true"
+          defaultKey="startTime"
+          ?defaultDesc="${true}"
           .sortKeys="${WitnessApp.sortKeys}"
           .data="${this.results}"
           @sort-changed="${this.onSortChanged}">
@@ -353,7 +374,7 @@ class WitnessApp extends LitElement {
           <witness-job-result
             @on-delete="${this.onDelete}"
             @on-retry="${this.onRetry}"
-            .props="${this.extraProps[res.jobid + "-" + res.index]}"
+            .props="${this.extraProps[res.jobid]}"
             .result="${res}">
           </witness-job-result>
         </div>`)}
@@ -415,13 +436,18 @@ class JobResult extends LitElement {
       return;
     }
 
-    const res = await fetch(this.result.accessUrl, {method: "HEAD"});
+    const abort = new AbortController();
+    const signal = abort.signal;
+
+    const res = await fetch(this.result.accessUrl, {method: "GET", signal});
 
     if (res.status === 200) {
       this.props.size = Number(res.headers.get("Content-Length"));
       this.result.size = this.props.size;
       this.size = this.props.size;
     }
+
+    abort.abort();
   }
 
   static get styles() {
@@ -441,6 +467,13 @@ class JobResult extends LitElement {
       }
 
       replay-web-page {
+        height: 500px;
+        width: 100%;
+        display: flex;
+        border: 1px solid black;
+      }
+
+      iframe {
         height: 500px;
         width: 100%;
         display: flex;
@@ -589,6 +622,8 @@ class JobResult extends LitElement {
   }
 
   render() {
+    const startDate = new Date(this.result.startTime);
+
     const tag = this.result.userTag || html `<span aria-hidden="true">-</span><span class="is-sr-only">None</span>`;
 
     return html`
@@ -598,13 +633,17 @@ class JobResult extends LitElement {
           <p class="minihead">Status</p>
           ${this.renderStatus()}
         </div>
-        <div class="column clip is-2">
+        <div class="column clip is-1">
           <p class="minihead">Label</p>
           <p>${tag}</p>
         </div>
         <div class="column is-3">
-          <p class="minihead">Start Date</p>
-          ${new Date(this.result.startTime).toLocaleString()}
+          <p class="minihead">Start Time</p>
+          ${startDate.toLocaleString()}
+        </div>
+        <div class="column is-2">
+          <p class="minihead">Duration</p>
+          ${formatDistance(new Date(this.result.elapsedTime), startDate, {includeSeconds: true})}
         </div>
         <div class="column clip">
           <p class="minihead">URL</p>
@@ -620,16 +659,15 @@ class JobResult extends LitElement {
           ${this.renderControls()}
         </div>
       </div>
-      ${this.showPreview ? html`
+      ${this.showPreview && this.result.status === "Complete" ? html`
       <div class="preview">
         <replay-web-page
           source="${this.result.accessUrl}"
-          url="${this.result.captureUrl}">
+          embed="${this.result.useEmbeds ? "replayonly" : "default"}"
+          url="page:0">
         </replay-web-page>
-      </div>
-      ` : html``}
-
-    `;
+      </div>` : ``}
+      `;
   }
 
   clickOnSpacebarPress(event) {
@@ -642,6 +680,10 @@ class JobResult extends LitElement {
   }
 
   onTogglePreview(event) {
+    if (!this.result.status === "Complete") {
+      return;
+    }
+
     event.preventDefault();
     event.stopPropagation();
     this.showPreview = !this.showPreview;
