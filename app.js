@@ -27,7 +27,7 @@ function wrapCss(custom) {
 
 
 // ===========================================================================
-class WitnessApp extends LitElement {
+class CapturesApp extends LitElement {
   constructor() {
     super();
     this.apiprefix = "";
@@ -361,9 +361,9 @@ class WitnessApp extends LitElement {
       <h2 class="is-sr-only">Submitted Jobs</h2>
       <div class="sorter">
         <wr-sorter id="captures"
-          defaultKey="startTime"
-          ?defaultDesc="${true}"
-          .sortKeys="${WitnessApp.sortKeys}"
+          .sortKey="startTime"
+          .sortDesc="${true}"
+          .sortKeys="${CapturesApp.sortKeys}"
           .data="${this.results}"
           @sort-changed="${this.onSortChanged}">
         </wr-sorter>
@@ -371,12 +371,12 @@ class WitnessApp extends LitElement {
       <div class="container results">
         ${this.sortedResults.map((res) => html`
         <div class="result fade-in">
-          <witness-job-result
+          <captures-job-result
             @on-delete="${this.onDelete}"
             @on-retry="${this.onRetry}"
             .props="${this.extraProps[res.jobid]}"
             .result="${res}">
-          </witness-job-result>
+          </captures-job-result>
         </div>`)}
       </div>` : html`
       <i>No Available Captures Yet. Enter URLs above and click Capture to start capturing!</i>`}
@@ -702,5 +702,5 @@ class JobResult extends LitElement {
   }
 }
 
-customElements.define('witness-app', WitnessApp);
-customElements.define('witness-job-result', JobResult);
+customElements.define('captures-app', CapturesApp);
+customElements.define('captures-job-result', JobResult);
