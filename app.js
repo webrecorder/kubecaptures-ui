@@ -235,7 +235,7 @@ class CapturesApp extends LitElement {
 
     const res = await this.queueCapture(urls, tag);
 
-    if (res.status === 200) {
+    if (res.status === 201) {
       this.doUpdateResults();
       textArea.value = "";
 
@@ -280,7 +280,7 @@ class CapturesApp extends LitElement {
     }
 
     const res = await fetch(`${this.apiprefix}/capture/${jobid}`, {method: "DELETE", headers});
-    if (res.status != 200) {
+    if (res.status != 204) {
       this.errorMessage = html `Sorry, an error occurred: deletion failed.${this.contactMessage()}`;
     } else {
       this.doUpdateResults();
@@ -302,7 +302,7 @@ class CapturesApp extends LitElement {
 
     const res = await this.queueCapture(urls, tag);
 
-    if (res.status === 200) {
+    if (res.status === 201) {
       this.doUpdateResults();
     } else {
       this.errorMessage = html `Sorry, an error has occurred: capture not retried.${this.contactMessage()}`;
